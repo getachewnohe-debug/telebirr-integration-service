@@ -1,0 +1,115 @@
+const { telebirr } = require("../config");
+const { verifySignature } = require("../utils/telebirrSignature");
+
+function isFreshTimestamp(timestamp, maxAgeMs = 5 * 60 * 1000) {
+  if (!timestamp) return false;
+  const value = Number(timestamp);
+  if (!Number.isFinite(value)) return false;
+
+  const now = Date.now();
+  return Math.abs(now - value) <= maxAgeMs;
+}
+
+function getSignatureFromRequest(req, body) {
+  return (
+    req.headers["x-telebirr-signature"] ||
+    req.headers["x-signature"] ||
+    req.headers.signature ||
+    body.signature ||
+    body.sign
+  );
+}
+
+async function validateTelebirrCallback(req, res, next) {
+  try {
+    const body = req.body || {};
+    const signature = getSignatureFromRequest(req, body);
+
+    if (!signature) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing callback signature"
+      });
+    }
+
+    const requiredFields = [
+      "merchantId",
+      "merchantOrderId",
+      "transactionId",
+      "amount",
+      "status",
+      "timestamp"
+    ];
+
+    const missing = requiredFields.filter((field) => {
+      const value = body[field];
+      return value === undefined || value === null || value === "";
+    });
+
+    if (missing.length) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required callback fields",
+        missing
+      });
+    }
+
+    if (String(body.merchantId) !== String(telebirr.merchantId)) {
+      return res.status(401).json({
+        success: false,
+        message: "Merchant mismatch"
+      });
+    }
+
+    if (!isFreshTimestamp(body.timestamp)) {
+      return res.status(401).json({
+        success: false,
+        message: "Stale callback timestamp"
+      });
+    }
+
+    const payload = {
+      merchantId: body.merchantId,
+      merchantOrderId: body.merchantOrderId,
+      transactionId: body.transactionId,
+      amount: body.amount,
+      status: body.status,
+      timestamp: body.timestamp
+    };
+
+    const valid = verifySignature({
+      payload,
+      secretKey: telebirr.secretKey,
+      signature
+    });
+
+    if (!valid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid callback signature"
+      });
+    }
+
+    req.telebirrCallback = {
+      merchantId: String(body.merchantId),
+      merchantOrderId: String(body.merchantOrderId),
+      transactionId: String(body.transactionId),
+      amount: Number(body.amount),
+      status: String(body.status).toUpperCase(),
+      timestamp: Number(body.timestamp),
+      raw: body
+    };
+
+    return next();
+  } catch (error) {
+    console.error("Callback validation error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal callback validation error"
+    });
+  }
+}
+
+module.exports = {
+  validateTelebirrCallback
+};
