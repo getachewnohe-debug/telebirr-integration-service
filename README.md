@@ -1,7 +1,6 @@
 # Telebirr Integration Service
 
-<!-- Banner: upload assets/banner.png then uncomment the line below -->
-<!-- ![Safaricom + GitHub](assets/banner.png) -->
+![Safaricom + GitHub](src/file_000000007c6482088589e5e7ceade7c6.png)
 
 **Telebirr Payment Integration Service** — Node.js service for handling Telebirr H5 payments, callbacks, and verification.
 
@@ -27,8 +26,9 @@ src/
 │   └── paymentRoutes.js
 ├── middleware/
 │   └── validateTelebirrCallback
-└── utils/
-    └── telebirrSignature.js
+├── utils/
+│   └── telebirrSignature.js
+└── file_000000007c6482088589e5e7ceade7c6.png   ← banner (move to assets/ later)
 ```
 
 > Note: The folder structure has some issues (e.g. `app.jssrc`). Clean-up recommended.
@@ -58,11 +58,13 @@ Make sure the URL is **HTTPS** and publicly accessible.
 
 ## Banner / Social Preview
 
-1. Create folder `assets/`
-2. Upload the Safaricom + GitHub banner as `assets/banner.png`
-3. Uncomment the banner line at the top of this README
-4. (Optional) Set the same image as **Social preview** in  
-   Repo → Settings → General → Social preview
+Banner is currently at:
+`src/file_000000007c6482088589e5e7ceade7c6.png`
+
+Recommended later:
+1. Move it to `assets/banner.png`
+2. Update the image path in this README
+3. Set it as **Social preview** in Repo → Settings → General → Social preview
 
 ---
 
